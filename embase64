@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
+import argparse;
+import embase64;
+import sys;
+import xml.etree.ElementTree;
+
+
+if __name__ == '__main__':
+	# Parse command line arguments
+	parser = argparse.ArgumentParser(prog='embase64', add_help=True,
+	                                 usage='%(prog)s [OPTION]... FILE...',
+	                                 description='Embed images with base64',
+	                                 epilog='If a FILE is \'-\', or there is no FILE and stdin is not a tty, read standard input.',
+	                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter);
+	parser.add_argument('--overwrite', action='store_true',
+	                    help='Overwrite original files');
+	parser.add_argument('files', action='store', nargs='*', type=str, metavar='FILE',
+	                    help='Input files path');
+	args = parser.parse_args();
+
+	# Set stdin and stdout stream
+	if sys.version_info[0] == 2:
+		stdin = sys.stdin;
+		stdout = sys.stdout;
+	elif sys.version_info[0] == 3:
+		stdin = sys.stdin.buffer;
+		stdout = sys.stdout.buffer;
+	else:
+		raise EnvironmentError('Python major version must be 2 or 3; not {0}'.format(sys.version_info[0]));
+
+	# Add stdin identifier if there is no file and stdin is not a tty
+	if len(args.files) == 0:
+		if sys.stdin.isatty():
+			raise RuntimeError('Requires 1 argument at least.');
+		else:
+			args.files.append('-');
+
+	# Perform each file
+	for fp in args.files:
+		if fp == '-':
+			tree = xml.etree.ElementTree.parse(stdin);
+			embase64.replace(fp, tree.getroot());
+			tree.write(stdout, 'utf-8', True);
+		else:
+			tree = embase64.embed(fp);
+			tree.write(fp if args.overwrite else stdout, 'utf-8', True);

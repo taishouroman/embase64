@@ -1,0 +1,6 @@
+# Ignore all of files without specified files
+/*
+!*.py
+!.gitignore
+!README.md
+!embase64
